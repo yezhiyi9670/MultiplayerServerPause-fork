@@ -63,7 +63,7 @@ public final class CompatHandler
     private static class CompatValkyrienSkies extends Compat
     {
         Method getVsPipeline; //IShipObjectWorldServerProvider
-        Method setArePhysicsRunning; //VSPipeline
+        Method setArePhysicsRunning; //VSPipeline or VsiPipeline (VS 2.4+)
 
         @Override
         boolean check()
@@ -71,10 +71,21 @@ public final class CompatHandler
             try
             {
                 Class<?> clzProvider = Class.forName("org.valkyrienskies.mod.common.IShipObjectWorldServerProvider"); //Minecraft Server extends this
-                Class<?> clzPipeline = Class.forName("org.valkyrienskies.core.apigame.world.VSPipeline");
-                LOGGER.info("Found ValkyrienSkies classes, looking for methods");
 
-                getVsPipeline = clzProvider.getDeclaredMethod("getVsPipeline"); // Method returns VSPipeline
+                // Try VS 2.4+ class name first, then fall back to older versions
+                Class<?> clzPipeline = null;
+                try
+                {
+                    clzPipeline = Class.forName("org.valkyrienskies.core.internal.world.VsiPipeline"); // VS 2.4+
+                    LOGGER.info("Found ValkyrienSkies 2.4+ classes, looking for methods");
+                }
+                catch(ClassNotFoundException ignored)
+                {
+                    clzPipeline = Class.forName("org.valkyrienskies.core.apigame.world.VSPipeline"); // VS < 2.4
+                    LOGGER.info("Found ValkyrienSkies (pre-2.4) classes, looking for methods");
+                }
+
+                getVsPipeline = clzProvider.getDeclaredMethod("getVsPipeline"); // Method returns VSPipeline/VsiPipeline
                 getVsPipeline.setAccessible(true);
 
                 setArePhysicsRunning = clzPipeline.getDeclaredMethod("setArePhysicsRunning", boolean.class);
